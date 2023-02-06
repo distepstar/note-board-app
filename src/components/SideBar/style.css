@@ -1,0 +1,10 @@
+.side-bar-wrapper{
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-self: flex-start;
+  gap: 14px;
+  width: 100%;
+  margin: 0 0 0 0;
+  padding: 0 20px 0 20px;
+}
