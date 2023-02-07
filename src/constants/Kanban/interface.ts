@@ -7,6 +7,7 @@ export interface IKanbanSection {
 
 export interface IKanbanData {
   _id?: string;
+  projectId: string;
   creator: string;
   assignedTo?: string;
   title: string;
@@ -15,4 +16,12 @@ export interface IKanbanData {
   dueDate?: Date;
   section: TKanbanData;
   comment?: string;
+}
+
+export interface IKanbanProject {
+  projectId: string;
+  name: string;
+  establisher: string;
+  establishDate: Date;
+  status: string;
 }
