@@ -1,9 +1,10 @@
 import React from "react";
 // react router
-import { Outlet } from "react-router-dom";
+import { Outlet, Route, Routes } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons"
 import { IRouteList } from "../../constants/Routes";
+import { Calendar, Home, KanbanBoard, Notes } from "../../routes/MainActivity";
 
 interface ITitleBarHeaderProps {
   title: string;
@@ -32,7 +33,12 @@ export const Workplace: React.FC<IProps> = ({ routeInfo }): JSX.Element => {
       <div className="flex flex-row flex-shrink-0 w-full h-10 bg-zinc-800 pl-4 pr-4 justify-between place-items-center text-white">
         <TitleBarHeader title={routeInfo.title} icon={routeInfo.icon} />
       </div>
-      <Outlet />
+      <Routes>
+        <Route path={"/"} element={<Home />} />
+        <Route path={"/calendar"} element={<Calendar />} />
+        <Route path={"/notes"} element={<Notes />} />
+        <Route path={"/kanbanboard/*"} element={<KanbanBoard />} />
+      </Routes>
     </div>
   )
 }

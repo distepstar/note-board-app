@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 // font awesome
@@ -28,17 +28,16 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
 
   // data states
   const [currentProject, setCurrentProject] = useState<IKanbanProject | null>(null);
-  const [kanbanProjects, setKanbanProjects] = useState<IKanbanProject[] | null>(null);
-  const [sectionData, setSectionData] = useState<IKanbanData[] | null>(null);
   const [kanbanSection, setkanbanSection] = useState<IKanbanSection[]>(sectionListInit);
   const [isAscending, setIsAscending] = useState<boolean>(true);
 
   // api calls
-  const { isLoading: projectLoading, error: projectError } = useQuery<IKanbanProject[], Error>('kanbanProject', async () => {
+
+  const { isLoading: projectLoading, data: kanbanProjectData, error: projectError } = useQuery<IKanbanProject[], Error>(['kanbanProject',], async () => {
     return await KanbanApi.findAllKanbanProject();
   }, {
     onSuccess: (data) => {
-      setKanbanProjects(data);
+      console.log("Kanban project refetch invoke!");
       setCurrentProject(data[0]);
     },
     onError: (err: any) => {
@@ -47,13 +46,12 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
   })
 
   // fetch kanban data after fetching project data
-  const { isLoading: kanbanDataLoading, error: kanbanError } = useQuery<IKanbanData[], Error>(['kanbanData', currentProject], async () => {
+  const { isLoading: kanbanDataLoading, data: kanbanData, error: kanbanError } = useQuery<IKanbanData[], Error>(['kanbanData', currentProject], async () => {
     return await KanbanApi.findKanbanDataByProjectId(currentProject?.projectId as string);
   }, {
     enabled: !!currentProject?.projectId,
-    onSuccess: (kanbanData) => {
+    onSuccess: () => {
       console.log("Kanban data refetch invoke!")
-      setSectionData(kanbanData as IKanbanData[]);
     }
   });
 
@@ -66,11 +64,25 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
     },
   })
 
+  // memoization
+  const memoKanbanProject: IKanbanProject[] = useMemo(() => {
+    if (!kanbanProjectData) return [];
+    return kanbanProjectData.map((d) => ({
+      ...d,
+    }));
+  }, [kanbanProjectData])
+
+  const memoKanbanData: IKanbanData[] = useMemo(() => {
+    if (!kanbanData) return [];
+    return kanbanData.map((d) => ({
+      ...d,
+    }));
+  }, [kanbanData]);
 
   // render method
   const filteredData = useCallback((section: TKanbanData) => {
-    return sectionData && sectionData.filter(e => e.section === section);
-  }, [sectionData]);
+    return memoKanbanData && memoKanbanData.filter(e => e.section === section);
+  }, [memoKanbanData]);
 
 
   const handleSectionSort = (e: React.MouseEvent) => {
@@ -96,19 +108,17 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
 
   const handleDrop = useCallback((index: number, item: { itemIndex: string }) => {
     const sectionTitle = kanbanSection[index].titleType;
-    let data = [...(sectionData as IKanbanData[])];
+    let data = [...(memoKanbanData as IKanbanData[])];
     let tempIdx = data.findIndex(el => el._id === item.itemIndex);
     if (tempIdx === -1) {
       throw new TypeError("Value is empty");
     }
     data[tempIdx].section = sectionTitle;
-    setSectionData(data);
     console.log(`Section: ${index}, item: ${item.itemIndex}`)
-
     // push changes to db
     mutation.mutate(data[tempIdx]);
 
-  }, [sectionData])
+  }, [memoKanbanData])
 
   return (
     <div className="relatve flex flex-col justify-start place-items-center w-full pt-4 bg-zinc-600 text-white">
@@ -146,7 +156,7 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
               <div className={`absolute mt-1 bg-blue-600 w-60 rounded-md ${animationStart ? expandDropdown ? 'fade-in' : 'fade-out' : 'opacity-0 hidden'}`}>
                 <ul className="flex flex-col justify-center place-items-center space-y-1 pt-4 pb-4">
                   {
-                    kanbanProjects?.map((el, idx) => {
+                    memoKanbanProject?.map((el, idx) => {
                       return (
                         <li key={`kanban-dropdown-item-${idx}`} className={`w-10/12 border-b-[1px] border-b-white h-10 ${expandDropdown ? 'cursor-pointer' : 'pointer-events-none'}`} onClick={e => handleProjectChange(e, el)}>
                           <div className="flex justify-center place-items-center w-full h-8 hover:bg-blue-400 rounded-md">{el.name}</div>
