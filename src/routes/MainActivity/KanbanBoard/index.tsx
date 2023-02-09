@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 // font awesome
@@ -16,12 +16,16 @@ import { DragItemsType, TKanbanData, IKanbanData, IKanbanSection, sectionListIni
 // css
 import "./style.css";
 import { IKanbanProject } from "../../../constants/Kanban/interface";
+import { useNavigate } from "react-router-dom";
 
 interface IProps {
 
 }
 
 export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
+  // navigation
+
+  const navi = useNavigate();
   // animation state
   const [expandDropdown, setExpandDropdown] = useState<boolean>(false);
   const [animationStart, setAnimationStart] = useState<boolean>(false);
@@ -32,7 +36,6 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
   const [isAscending, setIsAscending] = useState<boolean>(true);
 
   // api calls
-
   const { isLoading: projectLoading, data: kanbanProjectData, error: projectError } = useQuery<IKanbanProject[], Error>(['kanbanProject',], async () => {
     return await KanbanApi.findAllKanbanProject();
   }, {
@@ -94,6 +97,11 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
   }
 
   // method
+  const createNewKanbanData = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navi("create");
+  }
+
   const handleProjectChange = (e: React.MouseEvent, project: IKanbanProject) => {
     e.preventDefault();
     setCurrentProject(project);
@@ -201,7 +209,7 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
                   <div>{currentProject?.name}</div>
                 </div>
                 <div className="kanban-manage-buttons-wrapper flex flex-row space-x-4">
-                  <KanbanManageButton icon={faAdd} title={"New Item"} customClass={"rounded-md bg-blue-400"} />
+                  <KanbanManageButton icon={faAdd} title={"New Item"} customClass={"rounded-md bg-blue-400"} onClickEvent={createNewKanbanData} />
                   <KanbanManageButton icon={faSearch} title={"Search"} />
                   <KanbanManageButton icon={faFilter} title={"Filter"} />
                   <KanbanManageButton icon={faSort} title={"Sort"} onClickEvent={handleSectionSort} />
@@ -215,6 +223,7 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
                       <KanbanSection
                         key={`kanban-section-${e.titleType.trim().toLowerCase()}`}
                         accept={[DragItemsType.TODO, DragItemsType.REVIEW, DragItemsType.INPROGRESS, DragItemsType.DONE]}
+                        projectId={currentProject?.projectId}
                         titleType={e.titleType}
                         data={filteredData(e.titleType)}
                         isLoading={kanbanDataLoading}

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useState } from "react";
 // react Dnd
 import { useDrag, useDrop } from "react-dnd";
 import { Identifier } from "dnd-core";
@@ -9,7 +9,7 @@ import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 // const
 import { TKanbanData, IKanbanData, sectionListInit } from "../../constants/Kanban";
 // react router dom
-import { Link, Routes, Route, useMatch, useNavigate, useParams } from "react-router-dom";
+import { Link, Routes, Route, useNavigate, useParams } from "react-router-dom";
 // react query
 import { useMutation, useQuery } from "react-query";
 // react datepicker
@@ -24,14 +24,23 @@ import { formateDate, handleDateConvert } from "../../utils/dateUtils";
 interface IKanbanSection {
   accept: TKanbanData[];
   titleType: TKanbanData;
+  projectId?: string;
   data: IKanbanData[] | null;
   handleOnDrop: (item: any) => void;
   isLoading: boolean;
 }
 
 export const KanbanSection: React.FC<IKanbanSection> = ({ accept, titleType, data, handleOnDrop, isLoading }): JSX.Element => {
+  // navigation
+  const navi = useNavigate();
+
   const noteItemKey = `kanban-${titleType.trim().toLowerCase}-item`;
   const [dataList, setDataList] = useState<IKanbanData[] | null>(data);
+  // states
+  const [focused, setFocused] = useState<boolean>(false);
+  // handle focus state when interacting with user input
+  const onFocus = () => setFocused(true);
+  const onBlur = () => setFocused(false);
 
   useEffect(() => {
     updateDataList(data);
@@ -49,12 +58,34 @@ export const KanbanSection: React.FC<IKanbanSection> = ({ accept, titleType, dat
     })
   })
 
+  // handle cancel popup windows and navigate back to parent route
+  const handleCancel = (e: React.MouseEvent) => {
+    e.preventDefault();
+    !focused && navi("/kanbanboard");
+  }
+
+
   return (
     <Routes>
       <Route path={'/*'} element={
         <div className="kanban-section-wrapper w-3/12 h-[60rem] rounded-md bg-gray-400 pb-4 text-black">
           <Routes>
-            <Route path={':id/*'} element={<KanbanPopupWrapper />} />
+            <Route path={':id/*'} element={
+              <KanbanDataViewUpdateWrapper
+                focused={focused}
+                onFocus={onFocus}
+                onBlur={onBlur}
+                handleCancel={handleCancel}
+              />}
+            />
+            <Route path={'create/*'} element={
+              <KanbanDataCreateWrapper
+                action={'create'}
+                focused={focused}
+                onFocus={onFocus}
+                onBlur={onBlur}
+              />}
+            />
           </Routes>
           <div className="flex flex-col justify-start place-items-center">
             <div className="kanban-section-title-wrapper flex flex-row justify-start place-items-center place-self-start">
@@ -170,17 +201,35 @@ export const KanbanNoteItem: React.FC<IKanbanNoteItem> = memo(({ data, icon = fa
   )
 });
 
-export const KanbanPopupWrapper: React.FC = () => {
+interface IKanbanPopupFocusState {
+  focused: boolean;
+  onFocus: () => void;
+  onBlur: () => void;
+}
+
+interface IKanbanDataCreateWrapper extends IKanbanPopupFocusState {
+  action: TKanbanItemEditAction;
+
+}
+
+export const KanbanDataCreateWrapper: React.FC<IKanbanDataCreateWrapper> = ({ action, focused, onFocus, onBlur }) => {
+  return (
+    <KanbanItemEdit
+      action={action}
+      focused={focused}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    />
+  )
+}
+
+interface IKanbanDataViewUpdateWrapper extends IKanbanPopupFocusState {
+  handleCancel: (e: React.MouseEvent) => void;
+}
+
+export const KanbanDataViewUpdateWrapper: React.FC<IKanbanDataViewUpdateWrapper> = ({ focused, onFocus, onBlur, handleCancel }) => {
   // react router
   let { id } = useParams();
-  const navi = useNavigate();
-
-  // states
-  const [focused, setFocused] = useState<boolean>(false);
-
-  // handle focus state when interacting with user input
-  const onFocus = () => setFocused(true);
-  const onBlur = () => setFocused(false);
 
   const { isLoading, data, error, isFetching } = useQuery<IKanbanData, Error>('kanbanDataById', async () => {
     if (id) {
@@ -197,54 +246,71 @@ export const KanbanPopupWrapper: React.FC = () => {
     },
   });
 
-  // handle cancel popup windows and navigate back to parent route
-  const handleCancel = (e: React.MouseEvent) => {
-    e.preventDefault();
-    !focused && navi("../../");
-  }
 
   return (
-    <div className={`fixed top-0 left-0 right-0 z-50 w-full h-full overflow-y-hidden `} >
-      <div className="flex flex-col justify-center place-items-center w-full h-full bg-black/30" onClick={handleCancel}>
-        <Routes>
-          <Route path={"/view"} element={
-            <KanbanItemTest
-              data={data}
-              isLoading={isLoading}
-              isFetching={isFetching}
-              error={error}
-              handleCancel={handleCancel}
-            />
-          }
-          />
-          <Route path={"/edit"} element={
-            <KanbanItemEdit
-              data={data}
-              focused={focused}
-              onFocus={onFocus}
-              onBlur={onBlur}
-            />}
-          />
-        </Routes>
-      </div>
-    </div>
+    <Routes>
+      <Route path={"/view"} element={
+        <KanbanItemTest
+          data={data}
+          isLoading={isLoading}
+          isFetching={isFetching}
+          error={error}
+          handleCancel={handleCancel}
+        />
+      }
+      />
+      <Route path={"/edit"} element={
+        <KanbanItemEdit
+          action={"update"}
+          data={data}
+          focused={focused}
+          onFocus={onFocus}
+          onBlur={onBlur}
+        />}
+      />
+    </Routes>
   )
 }
 
-interface IKanbanItemEdit {
-  data?: IKanbanData;
-  focused: boolean;
-  onFocus: () => void;
-  onBlur: () => void;
+
+
+
+type TKanbanCreateData = Omit<IKanbanData, "_id">;
+type TKanbanItemEditAction = 'create' | 'update';
+
+const kanbanDataInit: TKanbanCreateData = {
+  projectId: '',
+  creator: '',
+  assignedTo: '',
+  title: '',
+  desc: '',
+  issuedDate: new Date(),
+  dueDate: new Date(),
+  section: 'TO DO',
+  comment: '',
 }
 
-type TCancelAction = 'cancel' | 'discard';
+interface IKanbanItemEdit extends IKanbanPopupFocusState {
+  data?: IKanbanData;
+  action: TKanbanItemEditAction;
+}
 
-export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, focused, onFocus, onBlur }) => {
-  const [kanbanData, setKanbanData] = useState<IKanbanData | null | undefined>(data);
+export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, action, focused, onFocus, onBlur }) => {
+  const [kanbanData, setKanbanData] = useState<IKanbanData | null | undefined>(data ? data : kanbanDataInit);
   const navi = useNavigate();
 
   // effect
+  useEffect(() => {
+    // disable parent scroll action when pop-up
+    document.body.style.overflow = "hidden";
+
+    // clear effect
+    return (() => {
+      // enable parent scroll on destroy
+      document.body.style.overflow = "scroll";
+    })
+  }, [])
+
   useEffect(() => {
     // check if there are any changes
     checkDataChange();
@@ -277,10 +343,18 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, focused, onFoc
     let cfm: boolean = true;
 
     if (!focused) {
-      if (isDataChanged) {
-        cfm = confirm("Are you sure you want to discard all the changes?");
+      if (action === "update") {
+        if (isDataChanged) {
+          cfm = confirm("Are you sure you want to discard all the changes?");
+        }
+        cfm && navi("../view");
+      } else if (action === "create") {
+        if (JSON.stringify(kanbanData) !== JSON.stringify(kanbanDataInit)) {
+          cfm = confirm("Are you sure you want to discard all the changes?");
+        }
+        console.log(`exit?: ${cfm}`);
+        cfm && navi("/kanbanboard");
       }
-      cfm && navi("../view");
     }
   }
 
@@ -317,7 +391,7 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, focused, onFoc
           <div className="flex flex-col w-full h-full space-y-4" >
             <div className="inline-flex flex-row w-full justify-between place-items-center">
               <div>
-                <h1 className="text-2xl font-bold">{kanbanData?.title}</h1>
+                <h1 className="h-8 text-2xl font-bold">{kanbanData?.title}</h1>
                 <div className="text-gray-500 text-sm">Issued by: {kanbanData?.creator} </div>
                 <div className="text-gray-500 text-sm">Issued Date: {formateDate(kanbanData?.issuedDate)}</div>
                 <div className="text-gray-500 text-sm">Assigned to: {kanbanData?.assignedTo ? kanbanData.assignedTo : "N/A"}</div>
@@ -326,10 +400,13 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, focused, onFoc
                 <button className="text-2xl" onClick={() => { }}>
                   <FontAwesomeIcon icon={faXmark} />
                 </button>
-                <div className="flex flex-row space-x-2 text-lg">
-                  <div className=" font-bold">ID:</div>
-                  <div className="underline">{kanbanData?._id}</div>
-                </div>
+                {
+                  action === "update" &&
+                  <div className="flex flex-row space-x-2 text-lg">
+                    <div className=" font-bold">ID:</div>
+                    <div className="underline">{kanbanData?._id}</div>
+                  </div>
+                }
               </div>
             </div>
             <div className="flex flex-row space-x-4">
@@ -471,11 +548,6 @@ interface IKanbanItemTest {
 }
 
 export const KanbanItemTest: React.FC<IKanbanItemTest> = ({ data, isLoading, isFetching, error, handleCancel }) => {
-  // react router hooks
-  // catching path id
-  const navi = useNavigate();
-
-  // api calls
   // effect
   useEffect(() => {
     if (!isLoading) {
