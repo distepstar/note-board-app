@@ -218,12 +218,13 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
               </div>
               <div className="kanban-manage-section-wrapper flex flex-row justify-start place-items-center space-x-8 w-full h-full pl-4 pr-4 pb-4">
                 {
+                  !projectLoading &&
                   kanbanSection.map((e, idx) => {
                     return (
                       <KanbanSection
                         key={`kanban-section-${e.titleType.trim().toLowerCase()}`}
                         accept={[DragItemsType.TODO, DragItemsType.REVIEW, DragItemsType.INPROGRESS, DragItemsType.DONE]}
-                        projectId={currentProject?.projectId}
+                        projectId={currentProject!.projectId}
                         titleType={e.titleType}
                         data={filteredData(e.titleType)}
                         isLoading={kanbanDataLoading}

@@ -24,13 +24,13 @@ import { formateDate, handleDateConvert } from "../../utils/dateUtils";
 interface IKanbanSection {
   accept: TKanbanData[];
   titleType: TKanbanData;
-  projectId?: string;
+  projectId: string;
   data: IKanbanData[] | null;
   handleOnDrop: (item: any) => void;
   isLoading: boolean;
 }
 
-export const KanbanSection: React.FC<IKanbanSection> = ({ accept, titleType, data, handleOnDrop, isLoading }): JSX.Element => {
+export const KanbanSection: React.FC<IKanbanSection> = ({ accept, projectId, titleType, data, handleOnDrop, isLoading }): JSX.Element => {
   // navigation
   const navi = useNavigate();
 
@@ -80,6 +80,7 @@ export const KanbanSection: React.FC<IKanbanSection> = ({ accept, titleType, dat
             />
             <Route path={'create/*'} element={
               <KanbanDataCreateWrapper
+                projectId={projectId}
                 action={'create'}
                 focused={focused}
                 onFocus={onFocus}
@@ -209,13 +210,14 @@ interface IKanbanPopupFocusState {
 
 interface IKanbanDataCreateWrapper extends IKanbanPopupFocusState {
   action: TKanbanItemEditAction;
-
+  projectId: string;
 }
 
-export const KanbanDataCreateWrapper: React.FC<IKanbanDataCreateWrapper> = ({ action, focused, onFocus, onBlur }) => {
+export const KanbanDataCreateWrapper: React.FC<IKanbanDataCreateWrapper> = ({ action, projectId, focused, onFocus, onBlur }) => {
   return (
     <KanbanItemEdit
       action={action}
+      projectId={projectId}
       focused={focused}
       onFocus={onFocus}
       onBlur={onBlur}
@@ -280,9 +282,9 @@ type TKanbanItemEditAction = 'create' | 'update';
 
 const kanbanDataInit: TKanbanCreateData = {
   projectId: '',
-  creator: '',
+  creator: 'Louis',
   assignedTo: '',
-  title: '',
+  title: 'Default',
   desc: '',
   issuedDate: new Date(),
   dueDate: new Date(),
@@ -292,15 +294,19 @@ const kanbanDataInit: TKanbanCreateData = {
 
 interface IKanbanItemEdit extends IKanbanPopupFocusState {
   data?: IKanbanData;
+  projectId?: string;
   action: TKanbanItemEditAction;
 }
 
-export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, action, focused, onFocus, onBlur }) => {
+export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, action, focused, onFocus, onBlur }) => {
   const [kanbanData, setKanbanData] = useState<IKanbanData | null | undefined>(data ? data : kanbanDataInit);
   const navi = useNavigate();
 
   // effect
   useEffect(() => {
+    console.log(projectId);
+
+    projectId && setKanbanData({ ...kanbanData, ["projectId"]: projectId } as IKanbanData);
     // disable parent scroll action when pop-up
     document.body.style.overflow = "hidden";
 
@@ -317,7 +323,19 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, action, focuse
   }, [kanbanData]);
 
   // update api
-  const mutation = useMutation(KanbanApi.updateKanbanDataById, {
+  const createMutaton = useMutation(KanbanApi.createKanbanData, {
+    onSuccess: (res) => {
+      // alert popup for update success
+      alert(res.data.message);
+      // navigate back to the kanbanboard
+      navi("..");
+    },
+    onError: (err: any) => {
+      console.error(err);
+    },
+  })
+
+  const saveMutation = useMutation(KanbanApi.updateKanbanDataById, {
     onSuccess: (res: AxiosResponse<IResponse>) => {
       // alert popup for update success
       alert(res.data.message);
@@ -329,10 +347,16 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, action, focuse
     },
   });
 
+
+
   // api methods
+  const handleCreate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    createMutaton.mutate(kanbanData as IKanbanData);
+  }
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
-    mutation.mutate(kanbanData as IKanbanData);
+    saveMutation.mutate(kanbanData as IKanbanData);
   }
 
   // methods
@@ -391,7 +415,7 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, action, focuse
           <div className="flex flex-col w-full h-full space-y-4" >
             <div className="inline-flex flex-row w-full justify-between place-items-center">
               <div>
-                <h1 className="h-8 text-2xl font-bold">{kanbanData?.title}</h1>
+                <h1 className="w-80 h-8 truncate text-2xl font-bold">{kanbanData?.title}</h1>
                 <div className="text-gray-500 text-sm">Issued by: {kanbanData?.creator} </div>
                 <div className="text-gray-500 text-sm">Issued Date: {formateDate(kanbanData?.issuedDate)}</div>
                 <div className="text-gray-500 text-sm">Assigned to: {kanbanData?.assignedTo ? kanbanData.assignedTo : "N/A"}</div>
@@ -524,12 +548,22 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, action, focuse
               </div>
             </div>
             <div className="w-full pb-4">
-              <div className="flex flex-row space-x-4 justify-self-end justify-end place-items-end">
-                {mutation.isLoading}
-                <button className={`rounded-md pl-4 pr-4 w-22 h-10 bg-blue-600 text-white ${checkDataChange() ? 'hover:bg-blue-400' : 'bg-gray-700'}`} disabled={!checkDataChange()} onClick={handleSave}>Save</button>
-                <button className="rounded-md pl-4 pr-4 w-22 h-10 bg-yellow-800 text-white hover:bg-yellow-600" onClick={handleCancel}>Discard</button>
-                <button className="rounded-md pl-4 pr-4 w-22 h-10 bg-red-600 text-white hover:bg-red-400" onClick={handleCancel}>Cancel</button>
-              </div>
+              {
+                action === 'update' &&
+                <div className="flex flex-row space-x-4 justify-self-end justify-end place-items-end">
+                  <button className={`rounded-md pl-4 pr-4 w-22 h-10 bg-blue-600 text-white ${checkDataChange() ? 'hover:bg-blue-400' : 'bg-gray-700'}`} disabled={!checkDataChange()} onClick={handleSave}>Save</button>
+                  <button className="rounded-md pl-4 pr-4 w-22 h-10 bg-yellow-800 text-white hover:bg-yellow-600" onClick={handleCancel}>Discard</button>
+                  <button className="rounded-md pl-4 pr-4 w-22 h-10 bg-red-600 text-white hover:bg-red-400" onClick={handleCancel}>Cancel</button>
+                </div>
+
+              }
+              {
+                action === 'create' &&
+                <div className="flex flex-row space-x-4 justify-self-end justify-end place-items-end">
+                  <button className={`rounded-md pl-4 pr-4 w-22 h-10 bg-blue-600 text-white ${checkDataChange() ? 'hover:bg-blue-400' : 'bg-gray-700'}`} disabled={!checkDataChange()} onClick={handleCreate}>Create</button>
+                  <button className="rounded-md pl-4 pr-4 w-22 h-10 bg-red-600 text-white hover:bg-red-400" onClick={handleCancel}>Cancel</button>
+                </div>
+              }
             </div>
           </div>
         </div>
@@ -600,7 +634,7 @@ export const KanbanItemTest: React.FC<IKanbanItemTest> = ({ data, isLoading, isF
               <div className="flex flex-col w-full h-full space-y-4" >
                 <div className="inline-flex flex-row w-full justify-between place-items-center">
                   <div>
-                    <h1 className="text-2xl font-bold">{data?.title}</h1>
+                    <h1 className="w-80 h-8 truncate text-2xl font-bold">{data?.title}</h1>
                     <div className="text-gray-500 text-sm">Issued by: {data?.creator} </div>
                     <div className="text-gray-500 text-sm">Issued Date: {formateDate(data?.issuedDate)}</div>
                     <div className="text-gray-500 text-sm">Assigned to: {data?.assignedTo ? data.assignedTo : "N/A"}</div>
