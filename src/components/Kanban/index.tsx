@@ -20,6 +20,7 @@ import KanbanApi from "../../apis/Kanban";
 import { AxiosResponse } from "axios";
 import { IResponse } from "../../constants/apis";
 import { formateDate, handleDateConvert } from "../../utils/dateUtils";
+import { throttle } from "lodash";
 
 interface IKanbanSection {
   accept: TKanbanData[];
@@ -63,7 +64,6 @@ export const KanbanSection: React.FC<IKanbanSection> = ({ accept, projectId, tit
     e.preventDefault();
     !focused && navi("/kanbanboard");
   }
-
 
   return (
     <Routes>
@@ -347,8 +347,6 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
     },
   });
 
-
-
   // api methods
   const handleCreate = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -385,6 +383,14 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
   const checkDataChange = () => {
     return JSON.stringify(data) !== JSON.stringify(kanbanData) ? true : false;
   }
+
+  // handle expensive calls using throttle
+  const throttleInputFieldChangeHandler = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, fieldName: string) => {
+      const throttled = throttle(handleInputFieldChange, 2400);
+      throttled(e, fieldName);
+    }, [kanbanData]);
+
   const handleInputFieldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, fieldName: string) => {
     if (kanbanData?.hasOwnProperty(fieldName)) {
       setKanbanData({ ...kanbanData, [fieldName]: e.target.value });
@@ -392,11 +398,25 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
       console.error(`Field: ${fieldName} not found inside kanban data!`);
     }
   }
+  // handle expensive calls using throttle
+  const throttleSectionChangeHandler = useCallback(
+    (e: React.MouseEvent, section:TKanbanData) => {
+      const throttled = throttle(handleSectionChange, 2400);
+      throttled(e, section);
+    }, [kanbanData]);
+
 
   const handleSectionChange = (e: React.MouseEvent, section: TKanbanData,) => {
     e.preventDefault();
     setKanbanData({ ...kanbanData, section: section } as IKanbanData);
   }
+
+  // handle expensive calls using throttle
+  const throttleDateChangeHandler = useCallback(
+    (e: React.SyntheticEvent<any, Event> | undefined, name: "issuedDate" | "dueDate", date: Date | null) => {
+      const throttled = throttle(handleDateOnChange, 300);
+      throttled(e, name, date);
+    }, [kanbanData]);
 
   // handle user select event
   const handleDateOnChange = (e: React.SyntheticEvent<any, Event> | undefined, name: "issuedDate" | "dueDate", date: Date | null) => {
@@ -443,7 +463,7 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
                     value={kanbanData?.title}
                     onFocus={onFocus}
                     onBlur={onBlur}
-                    onChange={(e) => handleInputFieldChange(e, 'title')} />
+                    onChange={(e) => throttleInputFieldChangeHandler(e, 'title')} />
                 </div>
               </div>
               <div className="block w-6/12">
@@ -455,7 +475,7 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
                         <button
                           key={`section-items-${ele.id}`}
                           className={`flex justify-center place-items-center rounded-md h-10 text-lg p-4 ${ele.titleType === kanbanData?.section ? ' bg-blue-500' : ' bg-blue-400'}`}
-                          onClick={(e) => handleSectionChange(e, ele.titleType)}
+                          onClick={(e) => throttleSectionChangeHandler(e, ele.titleType)}
                         >
                           {ele.titleType}
                         </button>
@@ -477,7 +497,7 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
                     autoFocus
                     onFocus={onFocus}
                     onBlur={onBlur}
-                    onChange={(e) => handleInputFieldChange(e, 'creator')} />
+                    onChange={(e) => throttleInputFieldChangeHandler(e, 'creator')} />
                 </div>
               </div>
               <div className="block w-6/12">
@@ -489,7 +509,7 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
                     value={kanbanData?.assignedTo}
                     onFocus={onFocus}
                     onBlur={onBlur}
-                    onChange={(e) => handleInputFieldChange(e, 'assignedTo')} />
+                    onChange={(e) => throttleInputFieldChangeHandler(e, 'assignedTo')} />
                 </div>
               </div>
             </div>
@@ -503,7 +523,7 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
                     selected={handleDateConvert(kanbanData?.issuedDate)}
                     onFocus={onFocus}
                     onBlur={onBlur}
-                    onChange={(date, e) => handleDateOnChange(e, 'issuedDate', date)}
+                    onChange={(date, e) => throttleDateChangeHandler(e, 'issuedDate', date)}
                   />
                 </div>
               </div>
@@ -515,7 +535,7 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
                     selected={handleDateConvert(kanbanData?.dueDate)}
                     onFocus={onFocus}
                     onBlur={onBlur}
-                    onChange={(date, e) => handleDateOnChange(e, 'dueDate', date)}
+                    onChange={(date, e) => throttleDateChangeHandler(e, 'dueDate', date)}
                   />
                 </div>
               </div>
@@ -528,7 +548,7 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
                   value={kanbanData?.desc}
                   onFocus={onFocus}
                   onBlur={onBlur}
-                  onChange={(e) => handleInputFieldChange(e, 'desc')}
+                  onChange={(e) => throttleInputFieldChangeHandler(e, 'desc')}
                   rows={6}
                 />
               </div>
@@ -542,7 +562,7 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
                   rows={6}
                   onFocus={onFocus}
                   onBlur={onBlur}
-                  onChange={(e) => handleInputFieldChange(e, 'comment')}
+                  onChange={(e) => throttleInputFieldChangeHandler(e, 'comment')}
                 />
 
               </div>
@@ -572,7 +592,6 @@ export const KanbanItemEdit: React.FC<IKanbanItemEdit> = ({ data, projectId, act
   )
 }
 
-
 interface IKanbanItemTest {
   data: IKanbanData | undefined;
   isLoading: boolean;
@@ -601,7 +620,6 @@ export const KanbanItemTest: React.FC<IKanbanItemTest> = ({ data, isLoading, isF
   if (error) {
     return <div>{error.message}</div>;
   }
-
 
   return (
     <div className={`fixed top-0 left-0 right-0 z-50 w-full h-full overflow-y-hidden `} >

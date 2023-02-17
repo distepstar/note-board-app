@@ -1,8 +1,7 @@
 import { appApiClient } from "..";
 import { IResponse } from "../../constants/apis";
 import { IKanbanData } from "../../constants/Kanban";
-import { IKanbanProject } from "../../constants/Kanban/interface";
-
+import { IKanbanProject } from "../../constants/Kanban/interface"
 
 export const findAllKanbanProject = async () => {
   const res = await appApiClient.get<IKanbanProject[]>("/kanbanboard/kanbanapi/kanbanproject");

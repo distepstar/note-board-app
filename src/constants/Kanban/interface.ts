@@ -22,6 +22,6 @@ export interface IKanbanProject {
   projectId: string;
   name: string;
   establisher: string;
-  establishDate: Date;
+  establishDate: string;
   status: string;
 }
