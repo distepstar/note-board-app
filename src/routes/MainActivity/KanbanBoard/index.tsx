@@ -1,16 +1,16 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 // font awesome
 import { faAdd, faAngleRight, faBarsProgress, faFilter, faGear, faSearch, faSort } from "@fortawesome/free-solid-svg-icons"
 // components
 import { KanbanManageButton, KanbanSection } from "../../../components/Kanban";
 // react query
-import { useMutation, useQuery, } from "react-query";
+import { useMutation } from "react-query";
 import { AxiosResponse } from "axios";
 import { IResponse } from "../../../constants/apis";
 import KanbanApi from "../../../apis/Kanban/";
 // const
-import { DragItemsType, TKanbanData, IKanbanData, IKanbanSection, sectionListInit, currentProjectInitState } from "../../../constants/Kanban";
+import { DragItemsType, TKanbanData, IKanbanData, IKanbanSection, sectionListInit } from "../../../constants/Kanban";
 // css
 import "./style.css";
 import { IKanbanProject } from "../../../constants/Kanban/interface";
@@ -18,8 +18,8 @@ import { useNavigate } from "react-router-dom";
 // redux
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import { changeProject } from "../../../app/KanbanProject/action";
-import { ISessionStorageState, loadStateFromSessionStorage } from "../../../utils/persistent";
 import { throttle } from "lodash";
+import { fetchKanbanQueryData } from "../../../app/KanbanQuery";
 
 interface IProps {
 
@@ -27,9 +27,9 @@ interface IProps {
 
 export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
   // redux hook
-  const [projects, setProjects] = useState<IKanbanProject[]>([currentProjectInitState]);
-  const [currentProject, setCurrentProject] = useState<IKanbanProject>(currentProjectInitState);
   const dispatch = useAppDispatch();
+  const currentProject = useAppSelector(state => state.currentProject);
+  const { projectsQueryData, kanbanQueryData, status } = useAppSelector(state => state.kanbanQuerySlice);
 
   // navigation
   const navi = useNavigate();
@@ -39,21 +39,6 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
   // data states
   const [kanbanSection, setkanbanSection] = useState<IKanbanSection[]>(sectionListInit);
   const [isAscending, setIsAscending] = useState<boolean>(true);
-
-  // effect
-  useEffect(() => {
-    handleGetProjectsFromSession();
-  }, [])
-
-  // fetch kanban data after fetching project data
-  const { isLoading: kanbanDataLoading, data: kanbanData, error: kanbanError } = useQuery<IKanbanData[], Error>(['kanbanData', currentProject], async () => {
-    return await KanbanApi.findKanbanDataByProjectId(currentProject.projectId);
-  }, {
-    enabled: !!currentProject?.projectId,
-    onSuccess: () => {
-      console.log("Kanban data refetch invoke!")
-    }
-  });
 
   const mutation = useMutation(KanbanApi.updateKanbanDataById, {
     onSuccess: (res: AxiosResponse<IResponse>) => {
@@ -66,40 +51,25 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
 
   // memoization
   const memoKanbanProject: IKanbanProject[] = useMemo(() => {
-    if (!projects) return [];
-    return projects.map((d: IKanbanProject) => ({
+    if (!projectsQueryData) return [];
+    return projectsQueryData.map((d: IKanbanProject) => ({
       ...d,
     }));
-  }, [projects])
+  }, [projectsQueryData])
 
   const memoKanbanData: IKanbanData[] = useMemo(() => {
-    if (!kanbanData) return [];
-    return kanbanData.map((d) => ({
+    if (!kanbanQueryData) return [];
+    return kanbanQueryData.map((d) => ({
       ...d,
     }));
-  }, [kanbanData]);
+  }, [kanbanQueryData]);
 
   // render method
   const filteredData = useCallback((section: TKanbanData) => {
     return memoKanbanData && memoKanbanData.filter(e => e.section === section);
-  }, [memoKanbanData]);
+  }, [kanbanQueryData]);
 
   // method
-  const handleGetProjectsFromSession = () => {
-    let { data: projects, success: projectsSuccess, error: projectsError }: ISessionStorageState = loadStateFromSessionStorage('kanbanProjects');
-    let { data: currentProject, success: currentProjectSuccess, error: currentProjectError }: ISessionStorageState = loadStateFromSessionStorage('currentProject');
-    console.log("From Kanbanboard: get persistent data from session");
-
-    if (projectsError || currentProjectError)
-      console.error("error when getting persistent data");
-
-    const parsedProjects = JSON.parse(projects) as IKanbanProject[];
-    const parsedCurrentProject = JSON.parse(currentProject) as IKanbanProject;
-
-    projectsSuccess && setProjects(parsedProjects);
-    currentProjectSuccess && setCurrentProject(parsedCurrentProject);
-  }
-
   const handleSectionSort = (e: React.MouseEvent) => {
     e.preventDefault();
     setkanbanSection(prev => prev.sort((a, b) => {
@@ -115,8 +85,8 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
 
   const handleProjectChange = (e: React.MouseEvent, project: IKanbanProject) => {
     e.preventDefault();
-    dispatch(changeProject(project));
-    setCurrentProject(project);
+    dispatch(changeProject(project))
+    dispatch(fetchKanbanQueryData());
     setExpandDropdown(prev => prev = !prev);
   }
 
@@ -143,9 +113,7 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
     console.log(`Section: ${index}, item: ${item.itemIndex}`)
     // push changes to db
     mutation.mutate(data[tempIdx]);
-
   }
-   
 
   return (
     <div className="relatve flex flex-col justify-start place-items-center w-full pt-4 bg-zinc-600 text-white">
@@ -154,7 +122,7 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
         <div className="kanban-dropdown-wrapper relative">
           <button className="bg-blue-600 flex flex-row justify-start place-items-center gap-4 pl-4 w-40 h-9 rounded-md hover:bg-blue-400 font-bold" onClick={e => handleExpandDropdown(e)}>
             <FontAwesomeIcon icon={faAngleRight} className={`${animationStart ? expandDropdown ? 'rotate-arrow-90' : 'rotate-arrow-0' : ''}`} />
-            <h1>{currentProject?.name}</h1>
+            <h1>{currentProject.name}</h1>
           </button>
           <div className={`absolute mt-1 bg-blue-600 w-60 rounded-md ${animationStart ? expandDropdown ? 'fade-in' : 'fade-out' : 'opacity-0 hidden'}`}>
             <ul className="flex flex-col justify-center place-items-center space-y-1 pt-4 pb-4">
@@ -196,7 +164,7 @@ export const KanbanBoard: React.FC<IProps> = memo((): JSX.Element => {
                     projectId={currentProject!.projectId}
                     titleType={e.titleType}
                     data={filteredData(e.titleType)}
-                    isLoading={kanbanDataLoading}
+                    isLoading={status === "loading"}
                     handleOnDrop={(item) => throttleDropHandler(idx, item)}
                   />
                 )

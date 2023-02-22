@@ -1,12 +1,18 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 // react router
-import { LoaderFunction, Outlet, Route, Routes } from "react-router-dom";
+import { LoaderFunction, Outlet } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { IconDefinition } from "@fortawesome/free-solid-svg-icons"
-import { IRouteList } from "../../constants/Routes";
+import { faBug, IconDefinition } from "@fortawesome/free-solid-svg-icons"
+// const
+import { IRouteList, routeListInit } from "../../constants/Routes";
+// apis
 import KanbanApi from "../../apis/Kanban";
 import { QueryClient } from "react-query";
 import { IKanbanProject } from "../../constants/Kanban/interface";
+import { SideBar } from "../SideBar";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { fetchKanbanQueryData } from "../../app/KanbanQuery";
+import { loadStateFromSessionStorage } from "../../utils/persistent";
 
 interface ITitleBarHeaderProps {
   title: string;
@@ -23,7 +29,6 @@ const TitleBarHeader: React.FC<ITitleBarHeaderProps> = ({ title, icon }): JSX.El
     </div>
   )
 }
-
 
 interface IProps {
   routeInfo: IRouteList;
@@ -44,8 +49,8 @@ export const projectLoader = (queryClient: QueryClient): LoaderFunction =>
     )
   }
 
-
 export const Workplace: React.FC<IProps> = ({ routeInfo }): JSX.Element => {
+
   return (
     <div className="ml-[15%] w-[85%] h-full flex flex-col">
       <div className="flex flex-row flex-shrink-0 w-full h-10 bg-zinc-800 pl-4 pr-4 justify-between place-items-center text-white">
@@ -54,5 +59,37 @@ export const Workplace: React.FC<IProps> = ({ routeInfo }): JSX.Element => {
       <Outlet />
     </div>
   )
+}
+
+interface WorkplaceWrapper {
+}
+
+export const WorkplaceWrapper: React.FC<WorkplaceWrapper> = (): JSX.Element => {
+  const [routeInfo, setRouteInfo] = useState<IRouteList>({
+    title: "Dummy",
+    icon: faBug,
+    endpoint: "/"
+  });
+
+  // passing route infos (e.g. icon, title, endpoint) to derived components
+  const handleRouteChange = () => {
+    routeListInit.map(ele => {
+      if (ele.endpoint === location.pathname) {
+        setRouteInfo({ title: ele.title, icon: ele.icon, endpoint: ele.endpoint });
+      }
+    })
+  }
+
+  useEffect(() => {
+    handleRouteChange();
+  }, [location.pathname])
+
+  return (
+    <div className="flex flex-row justify-start place-items-start h-full">
+      <SideBar />
+      <Workplace routeInfo={routeInfo} />
+    </div>
+  )
+
 }
 

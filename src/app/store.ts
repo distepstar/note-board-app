@@ -1,16 +1,15 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/dist/query";
-import { kanbanProjectApi } from "./KanbanProject/query";
-import { currentKanbanProjectReducer, kanbanProjectsReducer } from "./KanbanProject/reducer";
+import { currentKanbanProjectReducer } from "./KanbanProject/reducer";
+import kanbanQuerySlice from "./KanbanQuery";
 
 export const store = configureStore({
   reducer: {
-    [kanbanProjectApi.reducerPath]: kanbanProjectApi.reducer,
-    kanbanProjects: kanbanProjectsReducer,
+    kanbanQuerySlice,
     currentProject: currentKanbanProjectReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(kanbanProjectApi.middleware),
+    getDefaultMiddleware().concat(),
 });
 
 setupListeners(store.dispatch);

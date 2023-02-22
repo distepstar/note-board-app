@@ -4,6 +4,8 @@ import "./style.css"
 // components
 import { IntroCard } from "../../../components/IntroCard";
 import { faHotTubPerson } from "@fortawesome/free-solid-svg-icons";
+import { useAppSelector } from "../../../app/hooks";
+import { LoadingIcon } from "../../../components/LoadingIcon";
 
 interface IProps {
 
@@ -13,6 +15,7 @@ const loremPara = "Lorem ipsum dolor sit amet, officia excepteur ex fugiat repre
 const testingTexts = ["texting", "texting", "texting", "texting", "texting", "texting", "texting", "texting", "texting", "texting", "texting", "texting", "texting",];
 
 export const Home: React.FC<IProps> = (): JSX.Element => {
+  const { status } = useAppSelector(state => state.kanbanQuerySlice);
 
   return (
     <div className="flex flex-col justify-start place-items-center w-full h-full pb-4 bg-zinc-800 text-white overflow-y-scroll no-scrollbar space-y-8 min-h-screen">
@@ -22,13 +25,13 @@ export const Home: React.FC<IProps> = (): JSX.Element => {
         </div>
         <div className="home-highlight flex flex-row w-full overflow-x-hidden ">
           <div className="highlight-list flex-row flex-none space-x-4 ml-4 mr-4 overflow-x-hidden no-scrollbar">
-            {/* TODO EMPTY LIST */}
-            <IntroCard title={"Header"} date={"01/04/2023"} status={"Pending"} body={loremPara} icon={faHotTubPerson} footnotes={testingTexts} />
-            <IntroCard title={"Header"} date={"01/04/2023"} status={"TODO"} body={loremPara} icon={faHotTubPerson} footnotes={testingTexts} />
-            <IntroCard title={"Header"} date={"01/04/2023"} status={"In Progress"} body={loremPara} icon={faHotTubPerson} footnotes={testingTexts} />
-            <IntroCard title={"Header"} date={"01/04/2023"} status={"Done"} body={loremPara} icon={faHotTubPerson} footnotes={testingTexts} />
-            <IntroCard title={"Header"} date={"01/04/2023"} status={"Pending"} body={loremPara} icon={faHotTubPerson} footnotes={testingTexts} />
-            <IntroCard title={"Header"} date={"01/04/2023"} status={"Pending"} body={loremPara} icon={faHotTubPerson} footnotes={testingTexts} />
+            {
+              status === 'loading' ?
+                <LoadingIcon />
+                :
+                <IntroCard title={"Header"} date={"01/04/2023"} status={"Pending"} body={loremPara} icon={faHotTubPerson} footnotes={testingTexts} />
+
+            }
           </div>
         </div>
       </div>
