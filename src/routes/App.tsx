@@ -2,13 +2,12 @@ import React, { useEffect } from "react";
 import "./App.css";
 // components
 import { WorkplaceWrapper } from "../components/Workplace";
-import { LoadingIcon } from "../components/LoadingIcon";
 // React Dnd
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 // font awesome
 // redux store
-import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { useAppDispatch } from "../app/hooks";
 // redux action
 import { fetchKanbanQueryData, fetchProjectsQueryData } from "../app/KanbanQuery";
 import { changeProject } from "../app/KanbanProject/action";
@@ -17,8 +16,6 @@ import { loadStateFromSessionStorage } from "../utils/persistent";
 
 const App: React.FC = (): JSX.Element => {
 
-  // redux hook
-  const { status } = useAppSelector(state => state.kanbanQuerySlice);
   // persistent
   const { data: currentProjectFromSession } = loadStateFromSessionStorage('currentProject');
 

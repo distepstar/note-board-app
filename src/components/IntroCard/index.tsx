@@ -5,33 +5,34 @@ import React, { useEffect, useState } from "react";
 // components
 import { IntroCardNote } from "./IntroCardNote";
 // const
-import { EStatus, TStatus } from "../../constants/TodoStatus";
+import { TKanbanData } from "../../constants/Kanban";
 
 interface IProps {
   title?: string;
-  status?: TStatus;
-  date?: string;
-  body?: string;
+  section?: TKanbanData;
+  issueDate?: string;
+  dueDate?: string;
+  desc?: string;
   icon?: IconDefinition;
   footnotes?: string[];
 }
 
 const colorList: string[] = ["bg-cyan-500", "bg-red-400", "bg-green-400", "bg-violet-500"];
 
-export const IntroCard: React.FC<IProps> = ({ title, status, date, body, icon, footnotes }): JSX.Element => {
+export const IntroCard: React.FC<IProps> = ({ title, section, issueDate, dueDate, desc, icon, footnotes }): JSX.Element => {
   // get random bg color
   const [randomColor] = useState<string>(colorList[Math.floor(Math.random() * colorList.length)]);
   const [statusColor, setStatusColor] = useState<string>("bg-gray-300");
 
   // methods
   const changeStatusColor = () => {
-    if (status === EStatus.pending) {
+    if (status === "REVIEW") {
       setStatusColor("bg-gray-300");
-    } else if (status === EStatus.todo) {
+    } else if (status === "TO DO") {
       setStatusColor("bg-yellow-300");
-    } else if (status === EStatus.inProgress) {
+    } else if (status === "IN PROGRESS") {
       setStatusColor("bg-indigo-500");
-    } else if (status === EStatus.done) {
+    } else if (status === "DONE") {
       setStatusColor("bg-green-200")
     }
   }
@@ -49,16 +50,19 @@ export const IntroCard: React.FC<IProps> = ({ title, status, date, body, icon, f
           </h1>
           <div className="flex flex-col space-y-1 text-sm font-bold  place-items-end">
             <div className={`rounded-md w-max ${statusColor} pl-2 pr-2`}>
-              {status}
+              {section}
             </div>
             <div className={`rounded-md w-max ${statusColor} pl-2 pr-2`}>
-              Created: {date}
+              Created: {issueDate}
+            </div>
+            <div className={`rounded-md w-max ${statusColor} pl-2 pr-2`}>
+              Due Date: {dueDate}
             </div>
           </div>
         </div>
         <div className="home-highlight-body-wrapper flex flex-row  w-11/12 h-[9rem] rounded-md bg-white">
           <div className="home-hightlight-body pl-2 pt-2 text-left w-4/6 h-full overflow-x-hidden no-scrollbar ">
-            {body}
+            {desc}
           </div>
           <div className="home-highlight-body-icon w-2/6 ml-1 flex flex-col justify-center place-items-center text-6xl border-l-4 border-l-slate-800 rounded-l-sm">
             {icon &&

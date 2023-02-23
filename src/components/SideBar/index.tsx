@@ -1,17 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 // css
 import "./style.css";
 // components
 import { NodeContainer } from "./NodeContainer"
-// font awesome
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 // const
 import { routeListInit, IRouteList } from "../../constants/Routes";
 
-interface IProps {
-
-}
-
+interface IProps { }
 
 export const SideBar: React.FC<IProps> = (): JSX.Element => {
   const [routeList, setRouteList] = useState<IRouteList[]>(routeListInit)
@@ -26,20 +21,24 @@ export const SideBar: React.FC<IProps> = (): JSX.Element => {
         return ele.title.toLowerCase().includes(searchInput.toLowerCase());
       }
     })
-
     return filterdList
   }
 
-  const renderRouteList = (callback: () => IRouteList[]) => {
+  const renderRouteList = useCallback((callback: () => IRouteList[]) => {
     const renderList = callback().map((ele, idx) => {
       return (
-        <NodeContainer key={`side-bar-nav-${idx}`}  icon={<FontAwesomeIcon icon={ele.icon} />} title={ele.title} to={ele.endpoint} />
+        <NodeContainer
+          key={`side-bar-nav-${idx}`}
+          icon={ele.icon}
+          title={ele.title}
+          to={ele.endpoint}
+        />
       )
     })
     return renderList;
-  }
+  }, [])
 
-  return ( 
+  return (
     <div className="side-bar-container inline-block w-[15%] min-h-screen h-full fixed overflow-auto bg-stone-900">
       <div className="side-bar-wrapper text-white flex flex-col w-full justify-start place-items-center">
         <div className="side-bar-header-wrapper border-b-slate-500 border-b-2 pt-4 h-14">
@@ -56,7 +55,6 @@ export const SideBar: React.FC<IProps> = (): JSX.Element => {
         <div className="side-bar-item-list flex flex-col space-y-2">
           {renderRouteList(filterRouteList)}
         </div>
-
       </div>
     </div>
   )

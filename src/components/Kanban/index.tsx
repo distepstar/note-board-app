@@ -97,13 +97,14 @@ export const KanbanSection: React.FC<IKanbanSection> = ({ accept, projectId, tit
               <h1 className="font-bold text-xl text-slate-700 p-4">{titleType}</h1>
               <div className="text-lg text-gray-800">{data ? data.length : 0}</div>
             </div>
-            <div className={`kanban-section-items-wrapper overflow-y-scroll no-scrollbar w-full h-[55rem] snap-y ${isOver ? 'bg-gray-500' : ''}`} ref={drop}>
-              {
-                <div className="flex flex-col justify-start place-items-center space-y-6" >
-                  {
-                    isLoading ?
-                      <LoadingIcon />
-                      :
+            {
+              isLoading ?
+                <LoadingIcon />
+                :
+                <div className={`kanban-section-items-wrapper overflow-y-scroll no-scrollbar w-full h-[55rem] snap-y ${isOver ? 'bg-gray-500' : ''}`} ref={drop}>
+
+                  <div className="flex flex-col justify-start place-items-center space-y-6" >
+                    {
                       dataList && dataList.map((e, idx) => {
                         return (
                           <KanbanNoteItem
@@ -112,10 +113,11 @@ export const KanbanSection: React.FC<IKanbanSection> = ({ accept, projectId, tit
                             accept={accept}
                           />
                         )
-                      })}
+                      })
+                    }
+                  </div>
                 </div>
-              }
-            </div>
+            }
           </div>
         </div>
       } />

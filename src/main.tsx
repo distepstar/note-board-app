@@ -2,13 +2,12 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
 import App from "./routes/App";
-import { Home, Calendar, Notes, KanbanBoard } from "./routes/MainActivity";
+import { Home, Calendar, Notes, KanbanBoard, Projects} from "./routes/MainActivity";
 import { Error } from "./routes/Error";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Provider } from 'react-redux';
 import { store } from './app/store';
-
 
 export const queryClient = new QueryClient();
 
@@ -21,6 +20,11 @@ const router = createBrowserRouter([
       {
         path: "",
         element: <Home />,
+        errorElement: <Error />,
+      },
+      {
+        path: "/projects",
+        element: <Projects />,
         errorElement: <Error />,
       },
       {
@@ -40,7 +44,7 @@ const router = createBrowserRouter([
       }
     ]
   },
-])
+]);
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

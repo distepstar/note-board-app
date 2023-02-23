@@ -1,6 +1,6 @@
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons"
 
-export interface IRouteList {
+export interface IRouteState {
   icon: IconDefinition;
   title: string;
   endpoint: string;
