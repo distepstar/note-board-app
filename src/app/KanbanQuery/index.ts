@@ -4,6 +4,7 @@ import { IKanbanProject } from "../../constants/Kanban/interface"
 import { findAllKanbanProject, findKanbanDataByProjectId } from "../../apis/Kanban";
 import { RootState } from "../store";
 import { loadStateFromSessionStorage, saveStateToSessionStorage } from "../../utils/persistent";
+import { changeProject } from "../KanbanProject/action";
 
 interface QueryState {
   projectsQueryData: IKanbanProject[] | null;
@@ -21,8 +22,19 @@ const initialState: QueryState = {
 
 export const fetchProjectsQueryData = createAsyncThunk<IKanbanProject[], void, { state: RootState }>(
   'kanbanQuery/fetchProjectsQueryData',
-  async (_, { getState }) => {
+  async (_, { getState, dispatch }) => {
     const data = await findAllKanbanProject() as IKanbanProject[];
+    let { data: localData, success, error } = loadStateFromSessionStorage("currentProject");
+
+    if (!success) {
+      console.log("no current project persisted in storage");
+      dispatch(changeProject(data[0]));
+      saveStateToSessionStorage('currentProject', data[0]);
+    } else {
+      console.log("found current project persisted in storage")
+      dispatch(changeProject(JSON.parse(localData) as IKanbanProject));
+    }
+
     return data;
   }
 );

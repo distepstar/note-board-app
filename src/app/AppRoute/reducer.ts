@@ -1,9 +1,7 @@
-import { faBug} from "@fortawesome/free-solid-svg-icons";
+import { faBug } from "@fortawesome/free-solid-svg-icons";
 import { createReducer } from "@reduxjs/toolkit";
 import { IRouteState } from "../../constants/Routes/interfaces";
 import { changeRoute } from "./action";
-
-
 
 const initialState: IRouteState = {
   title: "Default",
@@ -17,6 +15,3 @@ export const appRoute = createReducer(initialState, builder => {
     return action.payload;
   })
 });
-
-
-

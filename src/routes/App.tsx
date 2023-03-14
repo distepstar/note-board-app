@@ -9,33 +9,26 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 // redux store
 import { useAppDispatch } from "../app/hooks";
 // redux action
-import { fetchKanbanQueryData, fetchProjectsQueryData } from "../app/KanbanQuery";
-import { changeProject } from "../app/KanbanProject/action";
-// persistent
-import { loadStateFromSessionStorage } from "../utils/persistent";
+import {
+  fetchKanbanQueryData,
+  fetchProjectsQueryData,
+} from "../app/KanbanQuery";
 
 const App: React.FC = (): JSX.Element => {
-
-  // persistent
-  const { data: currentProjectFromSession } = loadStateFromSessionStorage('currentProject');
-
   const dispatch = useAppDispatch();
   // react router dom
 
   useEffect(() => {
     stateInitialzeHandler();
-  }, [])
+  }, []);
 
   // method
   const stateInitialzeHandler = () => {
     // redux async thunk query
-    dispatch(fetchProjectsQueryData())
-      .then(() =>
-        dispatch(fetchKanbanQueryData()))
-      .then(() =>
-        dispatch(changeProject(JSON.parse(currentProjectFromSession)))
-      );
-  }
+    dispatch(fetchProjectsQueryData()).then(() =>
+      dispatch(fetchKanbanQueryData())
+    );
+  };
 
   return (
     <div className="app">
@@ -43,7 +36,7 @@ const App: React.FC = (): JSX.Element => {
         <WorkplaceWrapper />
       </DndProvider>
     </div>
-  )
-}
+  );
+};
 
 export default App;

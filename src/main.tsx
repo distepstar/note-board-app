@@ -1,13 +1,19 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import './index.css'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
 import App from "./routes/App";
-import { Home, Calendar, Notes, KanbanBoard, Projects} from "./routes/MainActivity";
+import {
+  Home,
+  Calendar,
+  Notes,
+  KanbanBoard,
+  Projects,
+} from "./routes/MainActivity";
 import { Error } from "./routes/Error";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { Provider } from 'react-redux';
-import { store } from './app/store';
+import { QueryClient, QueryClientProvider } from "react-query";
+import { Provider } from "react-redux";
+import { store } from "./app/store";
 
 export const queryClient = new QueryClient();
 
@@ -23,7 +29,7 @@ const router = createBrowserRouter([
         errorElement: <Error />,
       },
       {
-        path: "/projects",
+        path: "/projects/*",
         element: <Projects />,
         errorElement: <Error />,
       },
@@ -41,17 +47,17 @@ const router = createBrowserRouter([
         path: "/kanbanboard/*",
         element: <KanbanBoard />,
         errorElement: <Error />,
-      }
-    ]
+      },
+    ],
   },
 ]);
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
       </QueryClientProvider>
     </Provider>
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);
